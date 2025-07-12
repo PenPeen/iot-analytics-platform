@@ -1,0 +1,94 @@
+# LocalStack Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: localstack-service
+  namespace: iot-platform
+  labels:
+    app: localstack
+spec:
+  selector:
+    app: localstack
+  ports:
+  - name: http
+    port: 4566
+    targetPort: 4566
+    protocol: TCP
+  type: ClusterIP
+
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: iot-platform
+  labels:
+    app: redis
+spec:
+  selector:
+    app: redis
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+    protocol: TCP
+  type: ClusterIP
+
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: iot-platform
+  labels:
+    app: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432
+    protocol: TCP
+  type: ClusterIP
+
+---
+# Rails Application Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: rails-app-service
+  namespace: iot-platform
+  labels:
+    app: rails-app
+spec:
+  selector:
+    app: rails-app
+  ports:
+  - name: http
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  type: LoadBalancer
+
+---
+# Rails Application NodePort Service (for local development)
+apiVersion: v1
+kind: Service
+metadata:
+  name: rails-app-nodeport
+  namespace: iot-platform
+  labels:
+    app: rails-app
+spec:
+  selector:
+    app: rails-app
+  ports:
+  - name: http
+    port: 3000
+    targetPort: 3000
+    nodePort: 30000
+    protocol: TCP
+  type: NodePort
