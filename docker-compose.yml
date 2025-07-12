@@ -1,0 +1,119 @@
+services:
+  # LocalStack - AWS サービスエミュレーション
+  localstack:
+    container_name: localstack_main
+    image: localstack/localstack:3.0
+    ports:
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    environment:
+      - DEBUG=1
+      - SERVICES=dynamodb,s3,sns,sqs
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=ap-northeast-1
+      - DYNAMODB_SHARE_DB=1
+      - PERSISTENCE=1
+    volumes:
+      - "./localstack/data:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - iot_platform
+
+  # Redis - キャッシュ・セッション管理
+  redis:
+    image: redis:7-alpine
+    container_name: redis_main
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - iot_platform
+
+  # PostgreSQL - Rails標準データベース（メタデータ用）
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_main
+    environment:
+      POSTGRES_DB: iot_platform_development
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - iot_platform
+
+  # Rails アプリケーション
+  rails:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rails_main
+    ports:
+      - "3000:3000"
+    environment:
+      - RAILS_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/iot_platform_development
+      - REDIS_URL=redis://redis:6379/0
+      - AWS_ENDPOINT=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_REGION=ap-northeast-1
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+    depends_on:
+      - postgres
+      - redis
+      - localstack
+    networks:
+      - iot_platform
+    command: >
+      bash -c "
+        mkdir -p tmp/pids tmp/cache log &&
+        bundle install &&
+        bin/rails db:create db:migrate &&
+        bin/rails server -b 0.0.0.0
+      "
+
+  # Sidekiq - バックグラウンドジョブ処理
+  sidekiq:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sidekiq_main
+    environment:
+      - RAILS_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/iot_platform_development
+      - REDIS_URL=redis://redis:6379/0
+      - AWS_ENDPOINT=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_REGION=ap-northeast-1
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+    depends_on:
+      - postgres
+      - redis
+      - localstack
+    networks:
+      - iot_platform
+    command: >
+      bash -c "
+        mkdir -p tmp/pids tmp/cache log &&
+        bundle install &&
+        bundle exec sidekiq
+      "
+
+volumes:
+  postgres_data:
+  redis_data:
+  bundle_cache:
+
+networks:
+  iot_platform:
+    driver: bridge
