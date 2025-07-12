@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iot-platform-config
+  namespace: iot-platform
+data:
+  RAILS_ENV: "development"
+  RAILS_LOG_TO_STDOUT: "true"
+  DATABASE_HOST: "postgres-service"
+  DATABASE_PORT: "5432"
+  DATABASE_USERNAME: "postgres"
+  REDIS_URL: "redis://redis-service:6379/0"
+  AWS_ENDPOINT: "http://localstack-service:4566"
+  AWS_REGION: "ap-northeast-1"
+  DYNAMODB_ENDPOINT: "http://localstack-service:4566"
+  DYNAMODB_REGION: "ap-northeast-1"
+  LOG_LEVEL: "debug"
+  CACHE_STORE: "redis"
+  SESSION_STORE: "redis"
+  DEVELOPMENT_MODE: "true"
+  DEBUG: "true"

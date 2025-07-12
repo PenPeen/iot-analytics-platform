@@ -1,0 +1,222 @@
+# LocalStack Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localstack
+  namespace: iot-platform
+  labels:
+    app: localstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: localstack
+  template:
+    metadata:
+      labels:
+        app: localstack
+    spec:
+      containers:
+      - name: localstack
+        image: localstack/localstack:3.0
+        ports:
+        - containerPort: 4566
+        env:
+        - name: DEBUG
+          value: "1"
+        - name: SERVICES
+          value: "dynamodb,s3,sns,sqs"
+        - name: AWS_ACCESS_KEY_ID
+          value: "test"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "test"
+        - name: AWS_DEFAULT_REGION
+          value: "ap-northeast-1"
+        - name: DYNAMODB_SHARE_DB
+          value: "1"
+        - name: PERSISTENCE
+          value: "1"
+        volumeMounts:
+        - name: localstack-data
+          mountPath: /var/lib/localstack
+      volumes:
+      - name: localstack-data
+        emptyDir: {}
+
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: iot-platform
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+
+---
+# PostgreSQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: iot-platform
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "iot_platform_development"
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: iot-platform-config
+              key: DATABASE_USERNAME
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: iot-platform-secret
+              key: DATABASE_PASSWORD
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-data
+        emptyDir: {}
+
+---
+# Rails Application Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rails-app
+  namespace: iot-platform
+  labels:
+    app: rails-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rails-app
+  template:
+    metadata:
+      labels:
+        app: rails-app
+    spec:
+      initContainers:
+      - name: db-migrate
+        image: iot-platform:latest
+        command: ["rails", "db:create", "db:migrate"]
+        envFrom:
+        - configMapRef:
+            name: iot-platform-config
+        - secretRef:
+            name: iot-platform-secret
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/iot_platform_development"
+      containers:
+      - name: rails
+        image: iot-platform:latest
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: iot-platform-config
+        - secretRef:
+            name: iot-platform-secret
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/iot_platform_development"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+---
+# Sidekiq Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sidekiq
+  namespace: iot-platform
+  labels:
+    app: sidekiq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sidekiq
+  template:
+    metadata:
+      labels:
+        app: sidekiq
+    spec:
+      containers:
+      - name: sidekiq
+        image: iot-platform:latest
+        command: ["bundle", "exec", "sidekiq"]
+        envFrom:
+        - configMapRef:
+            name: iot-platform-config
+        - secretRef:
+            name: iot-platform-secret
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/iot_platform_development"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
