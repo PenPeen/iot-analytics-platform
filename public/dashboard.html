@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT データ収集・分析プラットフォーム - ダッシュボード</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem 1rem;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-item:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .main-content {
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .devices-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .device-list {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .device-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .device-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .device-info h4 {
+            margin-bottom: 0.25rem;
+            color: #333;
+        }
+
+        .device-info p {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-inactive {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .status-maintenance {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .system-health {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .health-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .health-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .health-healthy {
+            background: #10b981;
+        }
+
+        .health-error {
+            background: #ef4444;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .devices-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="sidebar">
+            <div class="logo">IoT Platform</div>
+            <div class="nav-item active" data-section="overview">
+                <i data-lucide="home"></i>
+                概要
+            </div>
+            <div class="nav-item" data-section="devices">
+                <i data-lucide="cpu"></i>
+                デバイス
+            </div>
+            <div class="nav-item" data-section="analytics">
+                <i data-lucide="bar-chart-3"></i>
+                分析
+            </div>
+            <div class="nav-item" data-section="alerts">
+                <i data-lucide="alert-triangle"></i>
+                アラート
+            </div>
+            <div class="nav-item" data-section="settings">
+                <i data-lucide="settings"></i>
+                設定
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <h1>IoT データ収集・分析プラットフォーム</h1>
+                <p>リアルタイムでIoTデバイスの状態とセンサーデータを監視</p>
+                <button class="refresh-btn" onclick="refreshData()">
+                    <i data-lucide="refresh-cw"></i>
+                    更新
+                </button>
+            </div>
+
+            <div id="loading" class="loading">
+                <p>データを読み込み中...</p>
+            </div>
+
+            <div id="error" class="error" style="display: none;">
+                <p>データの読み込みに失敗しました。</p>
+            </div>
+
+            <div id="content" style="display: none;">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon" style="background: #10b981;">
+                                <i data-lucide="cpu"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="total-devices">-</div>
+                        <div class="stat-label">総デバイス数</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon" style="background: #3b82f6;">
+                                <i data-lucide="activity"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="active-devices">-</div>
+                        <div class="stat-label">アクティブデバイス</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon" style="background: #8b5cf6;">
+                                <i data-lucide="database"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="total-data">-</div>
+                        <div class="stat-label">総データポイント</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon" style="background: #f59e0b;">
+                                <i data-lucide="clock"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="last-updated">-</div>
+                        <div class="stat-label">最終更新</div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-title">時間別データ量</div>
+                        <canvas id="hourlyChart" width="400" height="200"></canvas>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title">デバイス状態</div>
+                        <canvas id="statusChart" width="200" height="200"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">温度トレンド</div>
+                    <canvas id="temperatureChart" width="800" height="300"></canvas>
+                </div>
+
+                <div class="devices-grid">
+                    <div class="device-list">
+                        <h3>デバイス一覧</h3>
+                        <div id="device-list-content"></div>
+                    </div>
+
+                    <div class="device-list">
+                        <h3>システムヘルス</h3>
+                        <div id="system-health-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dashboardData = null;
+        let charts = {};
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            loadDashboardData();
+
+            // 自動更新（30秒間隔）
+            setInterval(loadDashboardData, 30000);
+        });
+
+        // ダッシュボードデータの読み込み
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard');
+                if (!response.ok) throw new Error('Failed to fetch data');
+
+                dashboardData = await response.json();
+                updateDashboard();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        // ダッシュボードの更新
+        function updateDashboard() {
+            if (!dashboardData) return;
+
+            // 統計情報の更新
+            document.getElementById('total-devices').textContent = dashboardData.overview.total_devices;
+            document.getElementById('active-devices').textContent = dashboardData.overview.active_devices;
+            document.getElementById('total-data').textContent = dashboardData.overview.total_data_points.toLocaleString();
+            document.getElementById('last-updated').textContent = new Date(dashboardData.overview.last_updated).toLocaleTimeString();
+
+            // チャートの更新
+            updateCharts();
+
+            // デバイス一覧の更新
+            updateDeviceList();
+
+            // システムヘルスの更新
+            updateSystemHealth();
+        }
+
+        // チャートの更新
+        function updateCharts() {
+            // 時間別データ量チャート
+            const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+            if (charts.hourly) charts.hourly.destroy();
+
+            charts.hourly = new Chart(hourlyCtx, {
+                type: 'line',
+                data: {
+                    labels: dashboardData.charts.hourly_data_volume.map(d => d.hour),
+                    datasets: [{
+                        label: 'データ数',
+                        data: dashboardData.charts.hourly_data_volume.map(d => d.count),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // デバイス状態チャート
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            if (charts.status) charts.status.destroy();
+
+            charts.status = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: dashboardData.charts.device_status_pie.map(d => d.name),
+                    datasets: [{
+                        data: dashboardData.charts.device_status_pie.map(d => d.value),
+                        backgroundColor: dashboardData.charts.device_status_pie.map(d => d.color)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // 温度トレンドチャート
+            const tempCtx = document.getElementById('temperatureChart').getContext('2d');
+            if (charts.temperature) charts.temperature.destroy();
+
+            const tempData = dashboardData.charts.temperature_trend;
+            const devices = [...new Set(tempData.map(d => d.device))];
+            const colors = ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'];
+
+            charts.temperature = new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: tempData.map(d => d.time),
+                    datasets: devices.map((device, index) => ({
+                        label: device,
+                        data: tempData.filter(d => d.device === device).map(d => d.temperature),
+                        borderColor: colors[index % colors.length],
+                        backgroundColor: colors[index % colors.length] + '20',
+                        tension: 0.4
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: { display: true, text: '温度 (°C)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // デバイス一覧の更新
+        function updateDeviceList() {
+            const container = document.getElementById('device-list-content');
+            container.innerHTML = '';
+
+            dashboardData.recent_data.forEach(item => {
+                const deviceElement = document.createElement('div');
+                deviceElement.className = 'device-item';
+
+                const values = Object.entries(item.data).map(([key, value]) =>
+                    `${key}: ${value}${getUnit(key)}`
+                ).join(', ');
+
+                deviceElement.innerHTML = `
+                    <div class="device-info">
+                        <h4>${item.device.name}</h4>
+                        <p>${values}</p>
+                        <p>品質: ${item.quality} | ${new Date(item.timestamp).toLocaleTimeString()}</p>
+                    </div>
+                    <div class="status-badge status-active">Active</div>
+                `;
+
+                container.appendChild(deviceElement);
+            });
+        }
+
+        // システムヘルスの更新
+        function updateSystemHealth() {
+            const container = document.getElementById('system-health-content');
+            const health = dashboardData.system_health;
+
+            container.innerHTML = `
+                <div class="system-health">
+                    <div class="health-item">
+                        <div class="health-status ${health.dynamodb.status === 'healthy' ? 'health-healthy' : 'health-error'}"></div>
+                        <span>DynamoDB: ${health.dynamodb.message}</span>
+                    </div>
+                    <div class="health-item">
+                        <div class="health-status ${health.redis.status === 'healthy' ? 'health-healthy' : 'health-error'}"></div>
+                        <span>Redis: ${health.redis.message}</span>
+                    </div>
+                    <div class="health-item">
+                        <div class="health-status ${health.postgresql.status === 'healthy' ? 'health-healthy' : 'health-error'}"></div>
+                        <span>PostgreSQL: ${health.postgresql.message}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // データの手動更新
+        function refreshData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+            loadDashboardData();
+        }
+
+        // 単位の取得
+        function getUnit(key) {
+            const units = {
+                temperature: '°C',
+                humidity: '%',
+                pressure: 'hPa',
+                co2_level: 'ppm',
+                light_intensity: 'lux',
+                soil_moisture: '%',
+                ph_level: 'pH',
+                battery_level: '%',
+                signal_strength: '%'
+            };
+            return units[key] || '';
+        }
+    </script>
+</body>
+</html>
