@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+if !defined?(Spring) && [nil, "development", "test"].include?(ENV["RAILS_ENV"])
+  gem "spring"
+  require "spring/binstub"
+end
