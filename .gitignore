@@ -1,0 +1,172 @@
+# Ruby & Rails
+*.gem
+*.rbc
+/.config
+/coverage/
+/InstalledFiles
+/pkg/
+/spec/reports/
+/spec/examples.txt
+/test/tmp/
+/test/version_tmp/
+/tmp/
+/.bundle/
+/vendor/bundle
+/lib/bundler/man/
+
+# Rails specific
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/storage/*
+!/storage/.keep
+.byebug_history
+/public/assets
+.sass-cache/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+/db/*.sqlite3
+/db/*.sqlite3-journal
+/db/*.sqlite3-*
+
+# Docker
+.dockerignore
+
+# LocalStack data
+/localstack/data/*
+!/localstack/data/.gitkeep
+
+# Kubernetes secrets
+k8s/secrets/
+k8s/*-secret.yaml
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node.js (if using for frontend assets)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Ruby version managers
+.ruby-version
+.ruby-gemset
+.rvmrc
+
+# Bundler
+.bundle/
+vendor/bundle/
+
+# Rails cache
+/tmp/cache/
+
+# Rails session store
+/tmp/sessions/
+
+# Rails uploaded files
+/storage/
+
+# Rails bootsnap cache
+/tmp/bootsnap*
+
+# Sidekiq
+/tmp/pids/
+
+# Redis dump file
+dump.rdb
+
+# Application specific
+/public/uploads/
+/public/system/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Compiled assets
+/public/assets/
+/public/packs/
+/public/packs-test/
+
+# Yarn
+yarn-error.log
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
