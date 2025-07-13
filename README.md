@@ -6,6 +6,15 @@ Rails + DynamoDB（Dynamoid） + Kubernetes + Redis + LocalStack + Terraform を
 
 センサーデータの大量書き込みにDynamoDBを活用し、デバイス管理とデータ可視化をRailsで構築した学習目的のプラットフォームです。LocalStackによる完全ローカル開発環境、Kubernetesでのコンテナオーケストレーション、Redisキャッシング、Sidekiqによる非同期処理を統合しています。
 
+![メインダッシュボード](images/dashboard_main.png)
+
+**主な機能:**
+- 5台のIoTデバイスの状態監視
+- 時系列センサーデータの可視化（温度、湿度、気圧など）
+- システムヘルス監視（DynamoDB、Redis、PostgreSQL）
+- リアルタイム更新（30秒間隔）
+- レスポンシブデザイン
+
 ## 🏗️ アーキテクチャ
 
 ```
@@ -375,3 +384,106 @@ MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してくださ�
 - Railsでの高性能API開発
 - Redisキャッシング戦略
 - Docker Composeでの統合環境管理
+
+## 🔧 トラブルシューティング
+
+### よくある問題と解決方法
+
+#### 1. データの読み込みに失敗する
+
+**症状**: ダッシュボードで「データの読み込みに失敗しました」と表示される
+
+**原因**: DynamoDBテーブルが存在しない、またはサービス間の接続エラー
+
+**解決方法**:
+```bash
+# 1. LocalStackとDynamoDBの状態確認
+docker-compose logs localstack
+
+# 2. DynamoDBテーブルの作成
+docker-compose exec rails bin/rails db:seed
+
+# 3. サービスの再起動
+docker-compose restart
+```
+
+#### 2. Redis接続エラー
+
+**症状**: システムヘルスでRedisが「Connected」にならない
+
+**原因**: Redis接続設定の問題
+
+**解決方法**:
+```bash
+# Redis接続確認
+docker-compose exec redis redis-cli ping
+
+# 環境変数確認
+docker-compose exec rails env | grep REDIS_URL
+```
+
+#### 3. コンテナが起動しない
+
+**症状**: `docker-compose up -d`でエラーが発生
+
+**解決方法**:
+```bash
+# 既存のコンテナとボリュームを削除
+docker-compose down -v
+
+# イメージの再ビルド
+docker-compose build --no-cache
+
+# 再起動
+docker-compose up -d
+```
+
+#### 4. LocalStackが応答しない
+
+**症状**: LocalStackのヘルスチェックが失敗する
+
+**解決方法**:
+```bash
+# LocalStackの状態確認
+curl http://localhost:4566/health
+
+# LocalStackの再起動
+docker-compose restart localstack
+
+# ログ確認
+docker-compose logs -f localstack
+```
+
+## 📝 更新履歴
+
+### 2025-07-13
+- **修正**: Redis接続エラーの解決
+  - `dashboard_controller.rb`でRedis接続方法を修正
+  - `Rails.cache.redis.ping`から`Redis.new().ping`に変更
+- **改善**: 温度トレンドチャートの下にマージン追加
+  - CSSで`margin-bottom: 2rem`を追加
+  - レイアウトの見栄えを改善
+- **機能追加**: README.mdにスクリーンショットセクション追加
+  - メインダッシュボードのスクリーンショット
+  - ヘルスチェックAPIのスクリーンショット
+  - デバイス管理APIのスクリーンショット
+
+### 初期リリース
+- IoTデータ収集・分析プラットフォームの基本機能実装
+- DynamoDB + LocalStack環境構築
+- Rails APIとWebダッシュボード実装
+- Docker Compose環境構築
+- Kubernetes設定ファイル作成
+- Terraform設定ファイル作成
+
+## 🤝 貢献
+
+このプロジェクトは学習目的で作成されています。改善提案やバグ報告は歓迎します。
+
+## 📄 ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。
+
+## 📞 サポート
+
+質問やサポートが必要な場合は、GitHubのIssuesをご利用ください。
