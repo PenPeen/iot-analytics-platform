@@ -232,7 +232,8 @@ class DashboardController < ApplicationController
 
   def check_redis_health
     begin
-      Rails.cache.redis.ping
+      redis_client = Redis.new(url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0'))
+      redis_client.ping
       { status: 'healthy', message: 'Connected' }
     rescue => e
       { status: 'error', message: e.message }
