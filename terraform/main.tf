@@ -18,6 +18,7 @@ provider "aws" {
   skip_credentials_validation = true
   skip_metadata_api_check     = true
   skip_requesting_account_id  = true
+  s3_use_path_style          = true
 
   endpoints {
     dynamodb = "http://localhost:4566"
@@ -128,6 +129,7 @@ resource "aws_s3_bucket" "iot_data_archive" {
   }
 }
 
+# S3 versioning設定
 resource "aws_s3_bucket_versioning" "iot_data_archive_versioning" {
   bucket = aws_s3_bucket.iot_data_archive.id
   versioning_configuration {
