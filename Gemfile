@@ -24,6 +24,9 @@ gem "jbuilder", "~> 2.7"
 gem "aws-sdk-dynamodb", "~> 1.0"
 gem "aws-sdk-s3", "~> 1.0"
 
+# Feature Flags
+gem "unleash", "~> 4.0"
+
 # Boot time optimization
 gem "bootsnap", ">= 1.16.0", require: false
 

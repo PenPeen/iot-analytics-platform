@@ -1,6 +1,14 @@
 class DashboardController < ApplicationController
-  # ダッシュボードページの表示
+  # ダッシュボードJSONデータの取得
   def index
+    @dashboard_title = if UNLEASH_CLIENT.is_enabled?('new_dashboard_ui')
+      "🚀 IoT データ収集・分析プラットフォーム (新機能版)"
+    else
+      "IoT データ収集・分析プラットフォーム"
+    end
+  end
+
+  def show
     @dashboard_data = Rails.cache.fetch('dashboard_data', expires_in: 2.minutes) do
       build_dashboard_data
     end
