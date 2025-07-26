@@ -43,6 +43,13 @@ Rails + DynamoDB（Dynamoid） + Kubernetes + Redis + LocalStack + Terraform を
                            │                      │
                            ▼                      │
                    ┌──────────────┐               │
+                   │ Unleash      │               │
+                   │ (Feature     │               │
+                   │  Flags)      │               │
+                   └──────────────┘               │
+                           │                      │
+                           ▼                      │
+                   ┌──────────────┐               │
                    │ Kubernetes   │◀──────────────┘
                    │ (オーケストレ │
                    │  ーション)   │
@@ -63,6 +70,7 @@ Rails + DynamoDB（Dynamoid） + Kubernetes + Redis + LocalStack + Terraform を
 - **ORM**: Dynamoid (DynamoDB) + ActiveRecord (PostgreSQL)
 - **Cache**: Redis
 - **Background Jobs**: Sidekiq
+- **Feature Flags**: Unleash
 - **API**: RESTful API + JSON
 
 ### インフラ・DevOps
@@ -98,6 +106,13 @@ Rails + DynamoDB（Dynamoid） + Kubernetes + Redis + LocalStack + Terraform を
 - **データ品質評価**: 自動品質チェック
 - **アラート機能**: 異常値検知
 - **統計集約**: 時間別・デバイス別集計
+
+### 🔧 Feature Flags (Unleash)
+- **URL**: http://localhost:4242
+- **管理画面**: Feature Flagsの作成・管理
+- **A/Bテスト**: 段階的機能リリース
+- **ユーザーセグメント**: 特定ユーザーへの機能提供
+- **リアルタイム切り替え**: 再デプロイ不要の機能制御
 
 ### 🏭 IoTデバイス構成
 1. **温度センサー** (temperature_sensor_001)
@@ -145,6 +160,10 @@ docker-compose exec rails bin/rails db:create db:migrate
 
 # サンプルデータ投入
 docker-compose exec rails bin/rails db:seed
+
+# Unleash初期設定
+echo "Unleash管理画面にアクセス: http://localhost:4242"
+echo "初期ログイン: admin / unleash4all"
 
 # サービス確認
 docker-compose ps
@@ -197,9 +216,11 @@ terraform output
 | **Webダッシュボード** | http://localhost:3000/dashboard.html | メインダッシュボード |
 | **Rails API** | http://localhost:3000/api/v1 | RESTful API |
 | **ヘルスチェック** | http://localhost:3000/health | システム状態確認 |
+| **Unleash** | http://localhost:4242 | Feature Flags管理 |
 | **LocalStack** | http://localhost:4566 | AWS サービスエミュレーション |
 | **Redis** | localhost:6379 | キャッシュサーバー |
 | **PostgreSQL** | localhost:5432 | データベース |
+| **PostgreSQL (Unleash)** | localhost:5433 | Unleash専用データベース |
 
 ## 📊 API エンドポイント
 
@@ -247,6 +268,65 @@ GET /api/dashboard/realtime
 # 統計情報
 GET /api/dashboard/statistics
 ```
+
+### Feature Flags
+```bash
+# 全Feature Flagsの状態取得
+GET /api/feature_flags
+
+# 特定Feature Flagの状態取得
+GET /api/feature_flags/:name
+
+# コンテキスト付きFeature Flag確認
+GET /api/feature_flags/:name?user_id=123&context[device_type]=sensor
+```
+
+## 🚩 Feature Flags (Unleash)
+
+### 初期設定
+
+```bash
+# Unleash管理画面にアクセス
+open http://localhost:4242
+
+# 初期ログイン情報
+Username: admin
+Password: unleash4all
+```
+
+### Feature Flagsの例
+
+```ruby
+# Railsアプリケーションでの使用例
+
+# 1. 新しいダッシュボード機能の段階的リリース
+if unleash.is_enabled?("new_dashboard_ui", user_id: current_user.id)
+  render :new_dashboard
+else
+  render :legacy_dashboard
+end
+
+# 2. 高度な分析機能の制御
+if unleash.is_enabled?("advanced_analytics")
+  perform_advanced_analysis
+end
+
+# 3. デバイス別機能の制御
+if unleash.is_enabled?("device_specific_features",
+                      context: { device_type: device.device_type })
+  enable_device_specific_features
+end
+```
+
+### 推奨Feature Flags
+
+| Flag名 | 説明 | 用途 |
+|--------|------|------|
+| `new_dashboard_ui` | 新しいダッシュボードUI | 段階的UI更新 |
+| `advanced_analytics` | 高度な分析機能 | 機能のA/Bテスト |
+| `real_time_alerts` | リアルタイムアラート | 負荷制御 |
+| `device_management_v2` | デバイス管理v2 | 新機能のカナリアリリース |
+| `experimental_features` | 実験的機能 | 開発者向け機能 |
 
 ## 💾 データモデル
 
@@ -454,9 +534,55 @@ docker-compose restart localstack
 docker-compose logs -f localstack
 ```
 
+#### 5. Unleashが起動しない
+
+**症状**: Unleash管理画面にアクセスできない
+
+**原因**: PostgreSQL接続エラー、またはポート競合
+
+**解決方法**:
+```bash
+# Unleash用PostgreSQLの状態確認
+docker-compose logs postgres_unleash
+
+# Unleashサービスの状態確認
+docker-compose logs unleash
+
+# ポート確認
+lsof -i :4242
+
+# Unleashサービスの再起動
+docker-compose restart unleash
+```
+
+#### 6. Feature Flagsが反映されない
+
+**症状**: Railsアプリケーションでfeature flagsが動作しない
+
+**原因**: API Token設定エラー、またはネットワーク接続問題
+
+**解決方法**:
+```bash
+# Unleash API接続確認
+curl -H "Authorization: default:development.unleash-insecure-api-token" \
+     http://localhost:4242/api/client/features
+
+# Rails環境変数確認
+docker-compose exec rails env | grep UNLEASH
+
+# Unleash接続テスト
+docker-compose exec rails bin/rails runner "puts Unleash.is_enabled?('test')"
+```
+
 ## 📝 更新履歴
 
 ### 2025-07-13
+- **新機能**: Unleash Feature Flagsの追加
+  - Docker ComposeにUnleashサービスを追加
+  - Unleash専用PostgreSQLデータベースの設定
+  - Rails/SidekiqでのUnleash環境変数設定
+  - Feature Flagsの使用例とベストプラクティス追加
+  - トラブルシューティングガイドの更新
 - **修正**: Redis接続エラーの解決
   - `dashboard_controller.rb`でRedis接続方法を修正
   - `Rails.cache.redis.ping`から`Redis.new().ping`に変更

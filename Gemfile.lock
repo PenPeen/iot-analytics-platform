@@ -176,6 +176,7 @@ GEM
     mini_mime (1.1.5)
     minitest (5.25.5)
     msgpack (1.8.0)
+    murmurhash3 (0.1.7)
     mutex_m (0.3.0)
     net-imap (0.5.9)
       date
@@ -320,6 +321,8 @@ GEM
     unicode-display_width (3.1.4)
       unicode-emoji (~> 4.0, >= 4.0.4)
     unicode-emoji (4.0.4)
+    unleash (4.6.0)
+      murmurhash3 (~> 0.1.7)
     vcr (6.3.1)
       base64
     webmock (3.25.1)
@@ -359,6 +362,7 @@ DEPENDENCIES
   spring
   spring-watcher-listen
   tzinfo-data
+  unleash (~> 4.0)
   vcr (~> 6.0)
   webmock (~> 3.18)
   yard (~> 0.9)
